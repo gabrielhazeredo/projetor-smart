@@ -47,8 +47,8 @@ def read_webcam(webcam):
         # Esperar por tecla "s" para salvar imagem
         elif key == ord('s'):
             ct = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-            cv.imwrite(f'./imagens/projetor_{ct}.jpg', contours_generated)
-            print(f"Imagem salva em ./imagens/projetor_{ct}.jpg")
+            cv.imwrite(f'./screenshots/projetor_{ct}.jpg', contours_generated)
+            print(f"Imagem salva em ./screenshots/projetor_{ct}.jpg")
 
     cap.release()
     cv.destroyAllWindows()
