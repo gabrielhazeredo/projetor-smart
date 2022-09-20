@@ -25,7 +25,7 @@ def calibrate(webcam):
 
     # Exibir imagem de calibragem
     if not rafael:
-        show_image('../calibration_images/camera_position.png')
+        show_image('./calibration_images/camera_position.png')
     else:
         show_image('./trabalho\calibration_images\camera_position.png')
 
@@ -150,7 +150,7 @@ def read_webcam(webcam, matriz):
             # Transformar para escala de cinza e aplicar threshold
             # Analisar histograma de testes para validar melhor threshold
             gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-            threshold, thresh = cv.threshold(gray, 200, 255, cv.THRESH_BINARY)
+            threshold, thresh = cv.threshold(gray, 225, 255, cv.THRESH_BINARY)
 
             # Achar contornos
             contours, hier = cv.findContours(thresh, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
