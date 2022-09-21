@@ -58,7 +58,7 @@ def find_coordinates(approx):
         old_points = np.float32(old_points)
     return old_points
 
-def use_digital_board(webcam, matriz):
+def use_digital_board(webcam, matriz, status, frame):
     # Alteração de env variable para resolver bug de lentidão na inicialização de camera logitech
     # https://github.com/opencv/opencv/issues/17687
     os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
@@ -174,7 +174,7 @@ def calibrate(webcam):
                     # Rodar código para desenho
                     if key == ord('c'):
                         cv.destroyAllWindows()
-                        use_digital_board(webcam, M)      
+                        use_digital_board(webcam, M, status, frame)      
                 else:
                     pass
             except:
