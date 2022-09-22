@@ -9,6 +9,33 @@ def show_image(path):
     image = cv.imread(path)
     cv.imshow('calibration', image)
 
+def calibrate_black(webcam):
+    # Alteração de env variable para resolver bug de lentidão na inicialização de camera logitech
+    # https://github.com/opencv/opencv/issues/17687
+    os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
+
+    # Inicialização da câmera
+    cap = cv.VideoCapture(webcam, cv.CAP_DSHOW)
+
+    if not cap.isOpened():
+        print("Erro ao abrir a webcam")
+        exit()
+
+    show_image('../calibration_images/calibrate_black.png')
+
+    # Contagem de frames
+    fc = 0
+
+    while (cap.isOpened()):
+        # Execução a cada frame da webcam
+        status, frame = cap.read()
+        # Checagem de status True para camera ativa
+        if status:
+            # Somar frames
+            fc += 1
+            print(fc)
+           
+
 def find_rectangle(frame):
     approx = cnt = contours_generated = False
     # Criar uma máscara que representa apenas um intervalo de vermelho
@@ -130,14 +157,13 @@ def calibrate(webcam):
         print("Erro ao abrir a webcam")
         exit()
 
-    show_image('../calibration_images/camera_position2.png')
+    show_image('../calibration_images/calibrate_black.png')
 
     while (cap.isOpened()):
         # Execução a cada frame da webcam
         status, frame = cap.read()
         # Checagem de status True para camera ativa
         if status:
-
             # Comando por teclas
             key = cv.waitKey(1)
             # Esperar por tecla "q" para sair
