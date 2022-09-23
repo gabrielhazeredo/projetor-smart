@@ -8,45 +8,6 @@ def show_image(path):
     cv.setWindowProperty("calibration", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
     image = cv.imread(path)
     cv.imshow('calibration', image)
-
-def calibrate_black(webcam):
-    # Alteração de env variable para resolver bug de lentidão na inicialização de camera logitech
-    # https://github.com/opencv/opencv/issues/17687
-    os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
-
-    # Inicialização da câmera
-    cap = cv.VideoCapture(webcam, cv.CAP_DSHOW)
-    status, frame = cap.read()
-
-    if not cap.isOpened():
-        print("Erro ao abrir a webcam")
-        exit()
-
-    show_image('../calibration_images/calibrate_black.png')
-
-    # Contagem de frames
-    fc = 0
-    frames_sum = np.empty_like(frame)
-    frames_mean = np.empty_like(frame)
-
-    while (cap.isOpened()):
-        # Execução a cada frame da webcam
-        status, frame = cap.read()
-        # Checagem de status True para camera ativa
-        if fc < 10:
-            # Somar frames
-            frames_sum += frame
-            fc += 1
-            print(fc)
-        else:
-            # Calcular média dos frames
-            frames_mean = frames_sum/fc
-            # Converter para uint8
-            frames_mean = np.uint8(frames_mean)
-            # Salvar imagem
-            cv.imwrite('../screenshots/calibrate_black.png', frames_mean)
-            break
-        return frames_mean
            
 
 def find_rectangle(frame):
@@ -165,6 +126,7 @@ def calibrate(webcam):
 
     # Inicialização da câmera
     cap = cv.VideoCapture(webcam, cv.CAP_DSHOW)
+    status, frame = cap.read()
 
     if not cap.isOpened():
         print("Erro ao abrir a webcam")
@@ -172,6 +134,8 @@ def calibrate(webcam):
 
     # Estado inicial da calibração
     black_mean = 0
+    frame_count = 0
+    frames_sum = []
 
     while (cap.isOpened()):
         # Execução a cada frame da webcam
@@ -195,7 +159,23 @@ def calibrate(webcam):
             # Definição de qual função usar o frame
             if black_mean == 0:
                 show_image('../calibration_images/calibrate_black.png')
-                black_mean = calibrate_black(webcam)
+                if frame_count < 10:
+                    # Somar frames
+                    frames_sum.append(frame)
+                    frame_count += 1
+                    print(frame_count)
+                else:
+                    # Calculate blended image
+                    black_mean = frames_sum[0]
+                    for i in range(len(frames_sum)):
+                        if i == 0:
+                            pass
+                        else:
+                            alpha = 1.0/(i + 1)
+                            beta = 1.0 - alpha
+                            black_mean = cv.addWeighted(frames_sum[i], alpha, black_mean, beta, 0.0)
+                    # Salvar imagem
+                    cv.imwrite('../screenshots/calibrate_black.png', black_mean)
 
             # elif:
             #     show_image('../calibration_images/calibrate_white.png')
