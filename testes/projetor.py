@@ -133,7 +133,7 @@ def calibrate(webcam):
         exit()
 
     # Estado inicial da calibração
-    black_mean = 0
+    black_calibration = False
     frame_count = 0
     frames_sum = []
 
@@ -157,7 +157,7 @@ def calibrate(webcam):
                 print(f"Imagem salva em ../screenshots/projetor_{ct}.jpg")
 
             # Definição de qual função usar o frame
-            if black_mean == 0:
+            if black_calibration == False:
                 show_image('../calibration_images/calibrate_black.png')
                 if frame_count < 10:
                     # Somar frames
@@ -175,6 +175,7 @@ def calibrate(webcam):
                             beta = 1.0 - alpha
                             black_mean = cv.addWeighted(frames_sum[i], alpha, black_mean, beta, 0.0)
                     # Salvar imagem
+                    black_calibration = True
                     cv.imwrite('../screenshots/calibrate_black.png', black_mean)
 
             # elif:
