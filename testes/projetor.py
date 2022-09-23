@@ -134,6 +134,7 @@ def calibrate(webcam):
 
     # Estado inicial da calibração
     black_calibration = False
+    white_calibration = False
     frame_count = 0
     frames_sum = []
 
@@ -176,13 +177,30 @@ def calibrate(webcam):
                             black_mean = cv.addWeighted(frames_sum[i], alpha, black_mean, beta, 0.0)
                     # Salvar imagem
                     black_calibration = True
+                    frame_count = 0
+                    frames_sum = []
                     cv.imwrite('../screenshots/calibrate_black.png', black_mean)
 
-            # elif:
-            #     show_image('../calibration_images/calibrate_white.png')
-            #     white_mean = calibrate_white(webcam)
-            #     matriz = calculate_matrix(black_mean, white_mean)
-            #     use_digital_board(webcam, matriz, status, frame)
+            elif black_calibration == True and white_calibration == False: 
+                show_image('../calibration_images/calibrate_white.png')
+                if frame_count < 10:
+                    # Somar frames
+                    frames_sum.append(frame)
+                    frame_count += 1
+                    print(frame_count)
+                else:
+                    # Calculate blended image
+                    white_mean = frames_sum[0]
+                    for i in range(len(frames_sum)):
+                        if i == 0:
+                            pass
+                        else:
+                            alpha = 1.0/(i + 1)
+                            beta = 1.0 - alpha
+                            white_mean = cv.addWeighted(frames_sum[i], alpha, white_mean, beta, 0.0)
+                    # Salvar imagem
+                    white_calibration = True
+                    cv.imwrite('../screenshots/calibrate_white.png', white_mean)
 
             else:
                 approx, cnt, contours_generated = find_rectangle(frame)
