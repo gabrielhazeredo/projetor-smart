@@ -39,6 +39,14 @@ def find_rectangle(frame):
         pass
     return approx, cnt, contours_generated
 
+def onMouse(event, x, y, flags, param):
+   global posList
+   if event == cv.EVENT_LBUTTONDOWN:
+        posList.append((x, y))
+
+global posList
+posList = []
+
 def find_coordinates(approx):
     points = []
     for coord in approx:
@@ -74,7 +82,7 @@ def use_digital_board(webcam, matriz, status, frame):
     status, frame = cap.read()
     blank = np.zeros(frame.shape, dtype='uint8')
     
-    show_image('../calibration_images/camera_position.png')
+    #show_image('../calibration_images/camera_position.png')
 
     while (cap.isOpened()):
         # Execução a cada frame da webcam
@@ -108,6 +116,9 @@ def use_digital_board(webcam, matriz, status, frame):
         key = cv.waitKey(1)
         # Esperar por tecla "q" para sair
         if key == ord('q'):
+            cv.waitKey(0)
+            cap.release()
+            cv.destroyAllWindows()
             break
         # Esperar por tecla "l" para limpar a tela
         elif key == ord('l'):
@@ -152,42 +163,35 @@ def calibrate(webcam):
                 cv.imwrite(f'../screenshots/projetor_{ct}.jpg', frame)
                 print(f"Imagem salva em ../screenshots/projetor_{ct}.jpg")
 
-            approx, cnt, contours_generated = find_rectangle(frame)
-            try:
-                if len(approx)==4 and cv.contourArea(cnt)>5000:
-                    old_points = find_coordinates(approx)
-                    # Acho que vai bugar usar os pontos da imagem ao invés do frame
-                    # porque se o projetor for de uma resolução menor (quadrada) a imagem
-                    # vai ficar distorcida
-                    image = cv.imread('../calibration_images/camera_position2.png')
-                
-                    comprimento, altura = image.shape[1], image.shape[0]
-                    #a nova imagem tem as mesmas dimensoes que a imagem de calibraçao
-                    new_points = np.float32([[0,0],[comprimento,0],[0,altura],[comprimento,altura]])
-                    M = cv.getPerspectiveTransform(old_points,new_points)
-                    new_image = cv.warpPerspective(frame,M,(comprimento,altura))
-                    #diminuir tamanho para exibir
-                    resized_new = cv.resize(new_image, (comprimento//2,altura//2), interpolation=cv.INTER_AREA)
-                    cv.imshow("Imagem transformada", resized_new)
-                    old_points=old_points.reshape((-1,1,2))
+            cv.imshow('click', frame)
+            cv.setMouseCallback('click', onMouse)
 
-                    # Rodar código para desenho
-                    if key == ord('c'):
-                        cv.destroyAllWindows()
-                        use_digital_board(webcam, M, status, frame)      
-                else:
-                    pass
-            except:
-                pass
+            # Acho que vai bugar usar os pontos da imagem ao invés do frame
+            # porque se o projetor for de uma resolução menor (quadrada) a imagem
+            # vai ficar distorcida
+            image = cv.imread('../calibration_images/camera_position2.png')
+            if len(posList)==4:
+                old_points = np.float32(posList)
+                comprimento, altura = image.shape[1], image.shape[0]
+                #a nova imagem tem as mesmas dimensoes que a imagem de calibraçao
+                new_points = np.float32([[0,0],[comprimento,0],[0,altura],[comprimento,altura]])
+                M = cv.getPerspectiveTransform(old_points,new_points)
+                new_image = cv.warpPerspective(frame,M,(comprimento,altura))
+                #diminuir tamanho para exibir
+                resized_new = cv.resize(new_image, (comprimento//2,altura//2), interpolation=cv.INTER_AREA)
+                cv.imshow("Imagem transformada", resized_new)
+                old_points=old_points.reshape((-1,1,2))
+                cv.destroyAllWindows()
+                use_digital_board(webcam, M, status, frame)
+                break      
 
-            cv.imshow("Imagem normal",frame)
+            #cv.imshow("Imagem normal",frame)
             # cv.namedWindow("projetor", cv.WINDOW_NORMAL)
             # cv.setWindowProperty("projetor", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
-            cv.imshow('projetor', contours_generated)
-
+            #cv.imshow('projetor', contours_generated)
+    cv.waitKey(0)
     cap.release()
     cv.destroyAllWindows()
 
 if __name__ == "__main__":
-    calibrate(0)
-    
+    calibrate(1)
