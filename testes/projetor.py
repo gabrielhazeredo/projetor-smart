@@ -16,6 +16,7 @@ def calibrate_black(webcam):
 
     # Inicialização da câmera
     cap = cv.VideoCapture(webcam, cv.CAP_DSHOW)
+    status, frame = cap.read()
 
     if not cap.isOpened():
         print("Erro ao abrir a webcam")
@@ -25,15 +26,27 @@ def calibrate_black(webcam):
 
     # Contagem de frames
     fc = 0
+    frames_sum = np.empty_like(frame)
+    frames_mean = np.empty_like(frame)
 
     while (cap.isOpened()):
         # Execução a cada frame da webcam
         status, frame = cap.read()
         # Checagem de status True para camera ativa
-        if status:
+        if fc < 10:
             # Somar frames
+            frames_sum += frame
             fc += 1
             print(fc)
+        else:
+            # Calcular média dos frames
+            frames_mean = frames_sum/fc
+            # Converter para uint8
+            frames_mean = np.uint8(frames_mean)
+            # Salvar imagem
+            cv.imwrite('../screenshots/calibrate_black.png', frames_mean)
+            break
+        return frames_mean
            
 
 def find_rectangle(frame):
@@ -157,7 +170,8 @@ def calibrate(webcam):
         print("Erro ao abrir a webcam")
         exit()
 
-    show_image('../calibration_images/calibrate_black.png')
+    # Estado inicial da calibração
+    black_mean = 0
 
     while (cap.isOpened()):
         # Execução a cada frame da webcam
@@ -178,38 +192,50 @@ def calibrate(webcam):
                 cv.imwrite(f'../screenshots/projetor_{ct}.jpg', frame)
                 print(f"Imagem salva em ../screenshots/projetor_{ct}.jpg")
 
-            approx, cnt, contours_generated = find_rectangle(frame)
-            try:
-                if len(approx)==4 and cv.contourArea(cnt)>5000:
-                    old_points = find_coordinates(approx)
-                    # Acho que vai bugar usar os pontos da imagem ao invés do frame
-                    # porque se o projetor for de uma resolução menor (quadrada) a imagem
-                    # vai ficar distorcida
-                    image = cv.imread('../calibration_images/camera_position2.png')
-                
-                    comprimento, altura = image.shape[1], image.shape[0]
-                    #a nova imagem tem as mesmas dimensoes que a imagem de calibraçao
-                    new_points = np.float32([[0,0],[comprimento,0],[0,altura],[comprimento,altura]])
-                    M = cv.getPerspectiveTransform(old_points,new_points)
-                    new_image = cv.warpPerspective(frame,M,(comprimento,altura))
-                    #diminuir tamanho para exibir
-                    resized_new = cv.resize(new_image, (comprimento//2,altura//2), interpolation=cv.INTER_AREA)
-                    cv.imshow("Imagem transformada", resized_new)
-                    old_points=old_points.reshape((-1,1,2))
+            # Definição de qual função usar o frame
+            if black_mean == 0:
+                show_image('../calibration_images/calibrate_black.png')
+                black_mean = calibrate_black(webcam)
 
-                    # Rodar código para desenho
-                    if key == ord('c'):
-                        cv.destroyAllWindows()
-                        use_digital_board(webcam, M, status, frame)      
-                else:
+            # elif:
+            #     show_image('../calibration_images/calibrate_white.png')
+            #     white_mean = calibrate_white(webcam)
+            #     matriz = calculate_matrix(black_mean, white_mean)
+            #     use_digital_board(webcam, matriz, status, frame)
+
+            else:
+                approx, cnt, contours_generated = find_rectangle(frame)
+                try:
+                    if len(approx)==4 and cv.contourArea(cnt)>5000:
+                        old_points = find_coordinates(approx)
+                        # Acho que vai bugar usar os pontos da imagem ao invés do frame
+                        # porque se o projetor for de uma resolução menor (quadrada) a imagem
+                        # vai ficar distorcida
+                        image = cv.imread('../calibration_images/camera_position2.png')
+                    
+                        comprimento, altura = image.shape[1], image.shape[0]
+                        #a nova imagem tem as mesmas dimensoes que a imagem de calibraçao
+                        new_points = np.float32([[0,0],[comprimento,0],[0,altura],[comprimento,altura]])
+                        M = cv.getPerspectiveTransform(old_points,new_points)
+                        new_image = cv.warpPerspective(frame,M,(comprimento,altura))
+                        #diminuir tamanho para exibir
+                        resized_new = cv.resize(new_image, (comprimento//2,altura//2), interpolation=cv.INTER_AREA)
+                        cv.imshow("Imagem transformada", resized_new)
+                        old_points=old_points.reshape((-1,1,2))
+
+                        # Rodar código para desenho
+                        if key == ord('c'):
+                            cv.destroyAllWindows()
+                            use_digital_board(webcam, M, status, frame)      
+                    else:
+                        pass
+                except:
                     pass
-            except:
-                pass
 
             cv.imshow("Imagem normal",frame)
             # cv.namedWindow("projetor", cv.WINDOW_NORMAL)
             # cv.setWindowProperty("projetor", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
-            cv.imshow('projetor', contours_generated)
+            #cv.imshow('projetor', contours_generated)
 
     cap.release()
     cv.destroyAllWindows()
