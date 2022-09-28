@@ -81,7 +81,7 @@ def use_digital_board(webcam, matriz, status, frame):
     # Criar canvas simulando quadro de projeção
     status, frame = cap.read()
     blank = np.zeros(frame.shape, dtype='uint8')
-    
+      
     #show_image('../calibration_images/camera_position.png')
 
     while (cap.isOpened()):
@@ -91,7 +91,7 @@ def use_digital_board(webcam, matriz, status, frame):
             # Transformar para escala de cinza e aplicar threshold
             # Analisar histograma de testes para validar melhor threshold
             gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-            threshold, thresh = cv.threshold(gray, 225, 255, cv.THRESH_BINARY)
+            threshold, thresh = cv.threshold(gray, 200, 255, cv.THRESH_BINARY)
 
             # Achar contornos
             contours, hier = cv.findContours(thresh, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
@@ -103,6 +103,12 @@ def use_digital_board(webcam, matriz, status, frame):
             
             comprimento, altura = image.shape[1], image.shape[0]
             countours_transformed = cv.warpPerspective(contours_generated,matriz,(comprimento,altura))
+            # Borda da imagem
+            cv.rectangle(countours_transformed,(0,0),(countours_transformed.shape[1],countours_transformed.shape[0]),(255,255,255),6)
+            # Legendas
+            font = cv.FONT_HERSHEY_COMPLEX 
+            text = "Teclas de atalho: s = Salvar imagem, q = Sair, l = Limpar tela"
+            cv.putText(countours_transformed,text,(10,countours_transformed.shape[0]-10), font, 0.5,(255,255,255),1,cv.LINE_AA)
 
             cv.namedWindow("projetor", cv.WINDOW_NORMAL)
             cv.setWindowProperty("projetor", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
@@ -179,7 +185,6 @@ def calibrate(webcam):
                 new_image = cv.warpPerspective(frame,M,(comprimento,altura))
                 #diminuir tamanho para exibir
                 resized_new = cv.resize(new_image, (comprimento//2,altura//2), interpolation=cv.INTER_AREA)
-                cv.imshow("Imagem transformada", resized_new)
                 old_points=old_points.reshape((-1,1,2))
                 cv.destroyAllWindows()
                 use_digital_board(webcam, M, status, frame)
@@ -194,4 +199,4 @@ def calibrate(webcam):
     cv.destroyAllWindows()
 
 if __name__ == "__main__":
-    calibrate(1)
+    calibrate(0)
