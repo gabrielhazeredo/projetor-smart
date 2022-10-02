@@ -99,7 +99,7 @@ def use_digital_board(webcam, matriz, status, frame):
             # Desenhar contornos em canvas escuro
             contours_generated = cv.drawContours(blank, contours, -1, (10,10,200), -1)
 
-            image = cv.imread('../calibration_images/camera_position.png')
+            image = cv.imread('./calibration_images/camera_position.png')
             
             comprimento, altura = image.shape[1], image.shape[0]
             countours_transformed = cv.warpPerspective(contours_generated,matriz,(comprimento,altura))
@@ -132,7 +132,7 @@ def use_digital_board(webcam, matriz, status, frame):
         # Esperar por tecla "s" para salvar imagem
         elif key == ord('s'):
             ct = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-            cv.imwrite(f'./screenshots/projetor_{ct}.jpg', contours_generated)
+            cv.imwrite(f'./screenshots/projetor_{ct}.jpg', countours_transformed)
             print(f"Imagem salva em ./screenshots/projetor_{ct}.jpg")
 
 def calibrate(webcam):
@@ -147,7 +147,7 @@ def calibrate(webcam):
         print("Erro ao abrir a webcam")
         exit()
 
-    show_image('../calibration_images/camera_position2.png')
+    show_image('./calibration_images/camera_position2.png')
 
     while (cap.isOpened()):
         # Execução a cada frame da webcam
@@ -166,8 +166,8 @@ def calibrate(webcam):
             # Esperar por tecla "s" para salvar imagem
             elif key == ord('s'):
                 ct = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-                cv.imwrite(f'../screenshots/projetor_{ct}.jpg', frame)
-                print(f"Imagem salva em ../screenshots/projetor_{ct}.jpg")
+                cv.imwrite(f'./screenshots/projetor_{ct}.jpg', frame)
+                print(f"Imagem salva em ./screenshots/projetor_{ct}.jpg")
 
             cv.imshow('click', frame)
             cv.setMouseCallback('click', onMouse)
@@ -175,7 +175,7 @@ def calibrate(webcam):
             # Acho que vai bugar usar os pontos da imagem ao invés do frame
             # porque se o projetor for de uma resolução menor (quadrada) a imagem
             # vai ficar distorcida
-            image = cv.imread('../calibration_images/camera_position2.png')
+            image = cv.imread('./calibration_images/camera_position2.png')
             if len(posList)==4:
                 old_points = np.float32(posList)
                 comprimento, altura = image.shape[1], image.shape[0]
