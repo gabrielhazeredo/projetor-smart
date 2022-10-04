@@ -14,10 +14,10 @@ def show_image(path):
 def find_rectangle(frame):
     approx = cnt = contours_generated = False
     # Criar uma máscara que representa apenas um intervalo de vermelho
-    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-    cv.imwrite('../screenshots/calibrate_gray.png', gray)
-    threshold, thresh = cv.threshold(gray, 90, 255, cv.THRESH_BINARY)  # THRESHOLD PARA DIFERENÇA DE IMAGES PB  
-    cv.imwrite('../screenshots/calibrate_thresh.png', thresh)
+    #gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+    cv.imwrite('./screenshots/calibrate_gray.png', frame)
+    threshold, thresh = cv.threshold(frame, 90, 255, cv.THRESH_BINARY)  # THRESHOLD PARA DIFERENÇA DE IMAGES PB  
+    cv.imwrite('./screenshots/calibrate_thresh.png', thresh)
 
     # Achar contornos
     contours, hier = cv.findContours(thresh, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
@@ -92,7 +92,7 @@ def use_digital_board(webcam, matriz, status, frame):
             # Desenhar contornos em canvas escuro
             contours_generated = cv.drawContours(blank, contours, -1, (10,10,200), -1)
 
-            image = cv.imread('../calibration_images/calibrate_black.png')
+            image = cv.imread('./calibration_images/calibrate_black.png')
             
             comprimento, altura = image.shape[1], image.shape[0]
             countours_transformed = cv.warpPerspective(contours_generated,matriz,(comprimento,altura))
@@ -141,6 +141,7 @@ def calibrate(webcam):
     while (cap.isOpened()):
         # Execução a cada frame da webcam
         status, frame = cap.read()
+        frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         # Checagem de status True para camera ativa
         if status:
             # Comando por teclas
@@ -154,12 +155,12 @@ def calibrate(webcam):
             # Esperar por tecla "s" para salvar imagem
             elif key == ord('s'):
                 ct = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-                cv.imwrite(f'../screenshots/projetor_{ct}.jpg', frame)
+                cv.imwrite(f'./screenshots/projetor_{ct}.jpg', frame)
                 #print(f"Imagem salva em ../screenshots/projetor_{ct}.jpg")
 
             # Definição de qual função usar o frame
             if black_calibration == False:
-                show_image('../calibration_images/calibrate_black.png')
+                show_image('./calibration_images/calibrate_black.png')
                 time.sleep(0.1)
                 if 20 <= frame_count < 30:
                     # Somar frames
@@ -182,10 +183,9 @@ def calibrate(webcam):
                     black_calibration = True
                     frame_count = 0
                     frames_sum = []
-                    cv.imwrite('../screenshots/calibrate_black.png', black_mean)
 
             elif black_calibration == True and white_calibration == False: 
-                show_image('../calibration_images/calibrate_white.png')
+                show_image('./calibration_images/calibrate_white.png')
                 time.sleep(0.1)
                 if frame_count < 10:
                     # Somar frames
@@ -204,12 +204,10 @@ def calibrate(webcam):
                             white_mean = cv.addWeighted(frames_sum[i], alpha, white_mean, beta, 0.0)
                     # Salvar imagem
                     white_calibration = True
-                    cv.imwrite('../screenshots/calibrate_white.png', white_mean)
 
             else:
                 cv.destroyAllWindows()
                 diff = cv.absdiff(black_mean, white_mean)
-                cv.imwrite('../screenshots/calibrate_diff.png', diff)
 
                 approx, cnt, contours_generated = find_rectangle(diff)
                 try:
@@ -218,7 +216,7 @@ def calibrate(webcam):
                         # Acho que vai bugar usar os pontos da imagem ao invés do frame
                         # porque se o projetor for de uma resolução menor (quadrada) a imagem
                         # vai ficar distorcida
-                        image = cv.imread('../calibration_images/calibrate_black.png')
+                        image = cv.imread('./calibration_images/calibrate_black.png')
                     
                         comprimento, altura = image.shape[1], image.shape[0]
                         #a nova imagem tem as mesmas dimensoes que a imagem de calibraçao
