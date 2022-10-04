@@ -2,6 +2,7 @@ import numpy as np
 import cv2 as cv
 import os
 import datetime
+import time
 
 def show_image(path):
     cv.namedWindow("calibration", cv.WINDOW_NORMAL)
@@ -13,12 +14,13 @@ def show_image(path):
 def find_rectangle(frame):
     approx = cnt = contours_generated = False
     # Criar uma máscara que representa apenas um intervalo de vermelho
-    lower_red = np.array([110, 110, 155])
-    upper_red = np.array([130, 175, 240])
-    mask = cv.inRange(frame, lower_red, upper_red)
+    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+    cv.imwrite('../screenshots/calibrate_gray.png', gray)
+    threshold, thresh = cv.threshold(gray, 90, 255, cv.THRESH_BINARY)  # THRESHOLD PARA DIFERENÇA DE IMAGES PB  
+    cv.imwrite('../screenshots/calibrate_thresh.png', thresh)
 
     # Achar contornos
-    contours, hier = cv.findContours(mask, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
+    contours, hier = cv.findContours(thresh, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
 
     # Calcular maior contorno
     try: 
@@ -32,7 +34,7 @@ def find_rectangle(frame):
         approx = cv.approxPolyDP(cnt,epsilon,True)
 
         # Desenhar contorno do polígono na imagem
-        mask_draw = mask.copy()
+        mask_draw = thresh.copy()
         mask_draw = cv.cvtColor(mask_draw, cv.COLOR_GRAY2BGR)
         contours_generated = cv.drawContours(mask_draw, [approx], -1, (0,0,255), 3)
         print(f'Número de pontos do polígono: {len(approx)}')
@@ -74,8 +76,6 @@ def use_digital_board(webcam, matriz, status, frame):
     # Criar canvas simulando quadro de projeção
     status, frame = cap.read()
     blank = np.zeros(frame.shape, dtype='uint8')
-    
-    show_image('../calibration_images/camera_position.png')
 
     while (cap.isOpened()):
         # Execução a cada frame da webcam
@@ -84,7 +84,7 @@ def use_digital_board(webcam, matriz, status, frame):
             # Transformar para escala de cinza e aplicar threshold
             # Analisar histograma de testes para validar melhor threshold
             gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-            threshold, thresh = cv.threshold(gray, 225, 255, cv.THRESH_BINARY)
+            threshold, thresh = cv.threshold(gray, 225, 255, cv.THRESH_BINARY)  # THRESHOLD PARA ENCONTRAR LASER VERMELHO
 
             # Achar contornos
             contours, hier = cv.findContours(thresh, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
@@ -92,7 +92,7 @@ def use_digital_board(webcam, matriz, status, frame):
             # Desenhar contornos em canvas escuro
             contours_generated = cv.drawContours(blank, contours, -1, (10,10,200), -1)
 
-            image = cv.imread('../calibration_images/camera_position.png')
+            image = cv.imread('../calibration_images/calibrate_black.png')
             
             comprimento, altura = image.shape[1], image.shape[0]
             countours_transformed = cv.warpPerspective(contours_generated,matriz,(comprimento,altura))
@@ -155,16 +155,19 @@ def calibrate(webcam):
             elif key == ord('s'):
                 ct = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
                 cv.imwrite(f'../screenshots/projetor_{ct}.jpg', frame)
-                print(f"Imagem salva em ../screenshots/projetor_{ct}.jpg")
+                #print(f"Imagem salva em ../screenshots/projetor_{ct}.jpg")
 
             # Definição de qual função usar o frame
             if black_calibration == False:
                 show_image('../calibration_images/calibrate_black.png')
-                if frame_count < 10:
+                time.sleep(0.1)
+                if 20 <= frame_count < 30:
                     # Somar frames
                     frames_sum.append(frame)
                     frame_count += 1
-                    print(frame_count)
+                    #print(frame_count)
+                elif frame_count < 20:
+                    frame_count += 1 
                 else:
                     # Calculate blended image
                     black_mean = frames_sum[0]
@@ -183,11 +186,12 @@ def calibrate(webcam):
 
             elif black_calibration == True and white_calibration == False: 
                 show_image('../calibration_images/calibrate_white.png')
+                time.sleep(0.1)
                 if frame_count < 10:
                     # Somar frames
                     frames_sum.append(frame)
                     frame_count += 1
-                    print(frame_count)
+                    #print(frame_count)
                 else:
                     # Calculate blended image
                     white_mean = frames_sum[0]
@@ -203,14 +207,18 @@ def calibrate(webcam):
                     cv.imwrite('../screenshots/calibrate_white.png', white_mean)
 
             else:
-                approx, cnt, contours_generated = find_rectangle(frame)
+                cv.destroyAllWindows()
+                diff = cv.absdiff(black_mean, white_mean)
+                cv.imwrite('../screenshots/calibrate_diff.png', diff)
+
+                approx, cnt, contours_generated = find_rectangle(diff)
                 try:
                     if len(approx)==4 and cv.contourArea(cnt)>5000:
                         old_points = find_coordinates(approx)
                         # Acho que vai bugar usar os pontos da imagem ao invés do frame
                         # porque se o projetor for de uma resolução menor (quadrada) a imagem
                         # vai ficar distorcida
-                        image = cv.imread('../calibration_images/camera_position2.png')
+                        image = cv.imread('../calibration_images/calibrate_black.png')
                     
                         comprimento, altura = image.shape[1], image.shape[0]
                         #a nova imagem tem as mesmas dimensoes que a imagem de calibraçao
@@ -221,17 +229,20 @@ def calibrate(webcam):
                         resized_new = cv.resize(new_image, (comprimento//2,altura//2), interpolation=cv.INTER_AREA)
                         cv.imshow("Imagem transformada", resized_new)
                         old_points=old_points.reshape((-1,1,2))
+                        use_digital_board(webcam, M, status, frame)
+                        cap.release()
+                        cv.destroyAllWindows()
 
                         # Rodar código para desenho
-                        if key == ord('c'):
-                            cv.destroyAllWindows()
-                            use_digital_board(webcam, M, status, frame)      
+                        # if key == ord('c'):
+                        #     cv.destroyAllWindows()
+                        #     use_digital_board(webcam, M, status, frame)      
                     else:
                         pass
                 except:
                     pass
 
-            cv.imshow("Imagem normal",frame)
+            #cv.imshow("Imagem normal",frame)
             # cv.namedWindow("projetor", cv.WINDOW_NORMAL)
             # cv.setWindowProperty("projetor", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
             #cv.imshow('projetor', contours_generated)
