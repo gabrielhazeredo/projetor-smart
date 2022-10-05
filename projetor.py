@@ -16,7 +16,7 @@ def find_rectangle(frame):
     # Criar uma máscara que representa apenas um intervalo de vermelho
     #gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
     cv.imwrite('./screenshots/calibrate_gray.png', frame)
-    threshold, thresh = cv.threshold(frame, 90, 255, cv.THRESH_BINARY)  # THRESHOLD PARA DIFERENÇA DE IMAGES PB  
+    threshold, thresh = cv.threshold(frame, 70, 255, cv.THRESH_BINARY)  # THRESHOLD PARA DIFERENÇA DE IMAGES PB  
     cv.imwrite('./screenshots/calibrate_thresh.png', thresh)
 
     # Achar contornos
@@ -76,11 +76,12 @@ def use_digital_board(webcam, matriz, status, frame):
     # Criar canvas simulando quadro de projeção
     status, frame = cap.read()
     blank = np.zeros(frame.shape, dtype='uint8')
+    clean = False
 
     while (cap.isOpened()):
         # Execução a cada frame da webcam
         status, frame = cap.read()
-        if status:
+        if status and not clean:
             # Transformar para escala de cinza e aplicar threshold
             # Analisar histograma de testes para validar melhor threshold
             gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
@@ -90,7 +91,7 @@ def use_digital_board(webcam, matriz, status, frame):
             contours, hier = cv.findContours(thresh, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
 
             # Desenhar contornos em canvas escuro
-            contours_generated = cv.drawContours(blank, contours, -1, (10,10,200), -1)
+            contours_generated = cv.drawContours(blank, contours, -1, (20,20,180), -1)
 
             image = cv.imread('./calibration_images/calibrate_black.png')
             
@@ -98,7 +99,7 @@ def use_digital_board(webcam, matriz, status, frame):
             countours_transformed = cv.warpPerspective(contours_generated,matriz,(comprimento,altura))
 
             # Borda da imagem
-            cv.rectangle(countours_transformed,(0,0),(countours_transformed.shape[1],countours_transformed.shape[0]),(255,255,255),6)
+            cv.rectangle(countours_transformed,(0,0),(countours_transformed.shape[1],countours_transformed.shape[0]),(155,155,155),6)
             # Legendas
             font = cv.FONT_HERSHEY_COMPLEX 
             text = "Teclas de atalho: s = Salvar imagem, q = Sair, l = Limpar tela"
@@ -108,6 +109,24 @@ def use_digital_board(webcam, matriz, status, frame):
             cv.setWindowProperty("projetor", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
             cv.imshow('projetor', countours_transformed)
 
+        elif clean:
+            # Limpar tela
+            blank = np.zeros(frame.shape, dtype='uint8')
+            frame = blank.copy()
+            clean = False
+            contours_generated = []
+            countours_transformed = cv.warpPerspective(blank,matriz,(comprimento,altura))
+            # Borda da imagem
+            cv.rectangle(countours_transformed,(0,0),(countours_transformed.shape[1],countours_transformed.shape[0]),(155,155,155),6)
+            # Legendas
+            font = cv.FONT_HERSHEY_COMPLEX 
+            text = "Teclas de atalho: s = Salvar imagem, q = Sair, l = Limpar tela"
+            cv.putText(countours_transformed,text,(10,countours_transformed.shape[0]-10), font, 0.5,(155,155,155),1,cv.LINE_AA)
+
+            cv.namedWindow("projetor", cv.WINDOW_NORMAL)
+            cv.setWindowProperty("projetor", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
+            cv.imshow('projetor', countours_transformed)
+            #time.sleep(0.5)
         else:
             print("Arquivo de vídeo terminou. Número total de frames: %d" % (cap.get(cv.CAP_PROP_FRAME_COUNT)))
             break
@@ -120,6 +139,7 @@ def use_digital_board(webcam, matriz, status, frame):
         # Esperar por tecla "l" para limpar a tela
         elif key == ord('l'):
             blank = np.zeros(frame.shape, dtype='uint8')
+            clean = True
         # Esperar por tecla "s" para salvar imagem
         elif key == ord('s'):
             ct = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
@@ -148,9 +168,9 @@ def calibrate(webcam):
     while (cap.isOpened()):
         # Execução a cada frame da webcam
         status, frame = cap.read()
-        frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         # Checagem de status True para camera ativa
         if status:
+            frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
             # Comando por teclas
             key = cv.waitKey(1)
             # Esperar por tecla "q" para sair
@@ -232,7 +252,7 @@ def calibrate(webcam):
                         new_image = cv.warpPerspective(frame,M,(comprimento,altura))
                         #diminuir tamanho para exibir
                         resized_new = cv.resize(new_image, (comprimento//2,altura//2), interpolation=cv.INTER_AREA)
-                        cv.imshow("Imagem transformada", resized_new)
+                        #cv.imshow("Imagem transformada", resized_new)
                         old_points=old_points.reshape((-1,1,2))
                         use_digital_board(webcam, M, status, frame)
                         cap.release()
