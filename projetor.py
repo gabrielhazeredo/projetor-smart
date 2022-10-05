@@ -97,6 +97,13 @@ def use_digital_board(webcam, matriz, status, frame):
             comprimento, altura = image.shape[1], image.shape[0]
             countours_transformed = cv.warpPerspective(contours_generated,matriz,(comprimento,altura))
 
+            # Borda da imagem
+            cv.rectangle(countours_transformed,(0,0),(countours_transformed.shape[1],countours_transformed.shape[0]),(255,255,255),6)
+            # Legendas
+            font = cv.FONT_HERSHEY_COMPLEX 
+            text = "Teclas de atalho: s = Salvar imagem, q = Sair, l = Limpar tela"
+            cv.putText(countours_transformed,text,(10,countours_transformed.shape[0]-10), font, 0.5,(155,155,155),1,cv.LINE_AA)
+
             cv.namedWindow("projetor", cv.WINDOW_NORMAL)
             cv.setWindowProperty("projetor", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
             cv.imshow('projetor', countours_transformed)
