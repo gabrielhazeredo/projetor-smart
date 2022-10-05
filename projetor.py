@@ -108,7 +108,7 @@ def use_digital_board(webcam, matriz, status, frame):
             # Legendas
             font = cv.FONT_HERSHEY_COMPLEX 
             text = "Teclas de atalho: s = Salvar imagem, q = Sair, l = Limpar tela"
-            cv.putText(countours_transformed,text,(10,countours_transformed.shape[0]-10), font, 0.5,(255,255,255),1,cv.LINE_AA)
+            cv.putText(countours_transformed,text,(10,countours_transformed.shape[0]-10), font, 0.5,(155,155,155),1,cv.LINE_AA)
 
             cv.namedWindow("projetor", cv.WINDOW_NORMAL)
             cv.setWindowProperty("projetor", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
