@@ -16,7 +16,7 @@ def find_rectangle(frame):
     # Criar uma máscara que representa apenas um intervalo de vermelho
     #gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
     cv.imwrite('./screenshots/calibrate_gray.png', frame)
-    threshold, thresh = cv.threshold(frame, 70, 255, cv.THRESH_BINARY)  # THRESHOLD PARA DIFERENÇA DE IMAGES PB  
+    threshold, thresh = cv.threshold(frame, 50, 255, cv.THRESH_BINARY)  # THRESHOLD PARA DIFERENÇA DE IMAGES PB  
     cv.imwrite('./screenshots/calibrate_thresh.png', thresh)
 
     # Achar contornos
@@ -85,7 +85,7 @@ def use_digital_board(webcam, matriz, status, frame):
             # Transformar para escala de cinza e aplicar threshold
             # Analisar histograma de testes para validar melhor threshold
             gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-            threshold, thresh = cv.threshold(gray, 225, 255, cv.THRESH_BINARY)  # THRESHOLD PARA ENCONTRAR LASER VERMELHO
+            threshold, thresh = cv.threshold(gray, 200, 255, cv.THRESH_BINARY)  # THRESHOLD PARA ENCONTRAR LASER VERMELHO
 
             # Achar contornos
             contours, hier = cv.findContours(thresh, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
@@ -99,11 +99,11 @@ def use_digital_board(webcam, matriz, status, frame):
             countours_transformed = cv.warpPerspective(contours_generated,matriz,(comprimento,altura))
 
             # Borda da imagem
-            cv.rectangle(countours_transformed,(0,0),(countours_transformed.shape[1],countours_transformed.shape[0]),(155,155,155),6)
+            cv.rectangle(countours_transformed,(0,0),(countours_transformed.shape[1],countours_transformed.shape[0]),(135,135,135),6)
             # Legendas
             font = cv.FONT_HERSHEY_COMPLEX 
             text = "Teclas de atalho: s = Salvar imagem, q = Sair, l = Limpar tela"
-            cv.putText(countours_transformed,text,(10,countours_transformed.shape[0]-10), font, 0.5,(155,155,155),1,cv.LINE_AA)
+            cv.putText(countours_transformed,text,(10,countours_transformed.shape[0]-10), font, 0.5,(150,150,150),1,cv.LINE_AA)
 
             cv.namedWindow("projetor", cv.WINDOW_NORMAL)
             cv.setWindowProperty("projetor", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
@@ -112,7 +112,6 @@ def use_digital_board(webcam, matriz, status, frame):
         elif clean:
             # Limpar tela
             blank = np.zeros(frame.shape, dtype='uint8')
-            frame = blank.copy()
             clean = False
             contours_generated = []
             countours_transformed = cv.warpPerspective(blank,matriz,(comprimento,altura))
@@ -206,7 +205,10 @@ def calibrate(webcam):
                             alpha = 1.0/(i + 1)
                             beta = 1.0 - alpha
                             black_mean = cv.addWeighted(frames_sum[i], alpha, black_mean, beta, 0.0)
+                            black_mean = cv.add(black_mean, -10)
                     # Salvar imagem
+                    cv.imwrite('./screenshots/calibrate_black.png', black_mean)
+
                     black_calibration = True
                     frame_count = 0
                     frames_sum = []
@@ -230,11 +232,13 @@ def calibrate(webcam):
                             beta = 1.0 - alpha
                             white_mean = cv.addWeighted(frames_sum[i], alpha, white_mean, beta, 0.0)
                     # Salvar imagem
+                    cv.imwrite('./screenshots/calibrate_white.png', white_mean)
                     white_calibration = True
 
             else:
                 cv.destroyAllWindows()
                 diff = cv.absdiff(black_mean, white_mean)
+                cv.imwrite('./screenshots/calibrate_diff.png', diff)
 
                 approx, cnt, contours_generated = find_rectangle(diff)
                 try:
