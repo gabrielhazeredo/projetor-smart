@@ -6,4 +6,4 @@ Passos para utilizar o projeto:
 1. Baixar Python 3.10.6
 2. [Opcional] criar ambiente virtual
 3. pip install -r requirements.txt
-4. py projetor.py
+4. py projetor_smart.py
